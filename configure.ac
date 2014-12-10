@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lsipod], [0.1], [riktov@freeshell.de])
+AC_INIT([lsipod], [0.1], [RichterPN2002@yahoo.co.jp])
 AC_CONFIG_SRCDIR([lsipod.c])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
