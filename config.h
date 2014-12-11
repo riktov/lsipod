@@ -5,7 +5,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `gpod' library (-lgpod). */
-/* #undef HAVE_LIBGPOD */
+#define HAVE_LIBGPOD 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -38,7 +38,7 @@
 #define PACKAGE "lsipod"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "riktov@freeshell.de"
+#define PACKAGE_BUGREPORT "RichterPN2002@yahoo.co.jp"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "lsipod"
