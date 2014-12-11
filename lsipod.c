@@ -16,7 +16,6 @@ May be useful for copying from iPod to PC without using iTunes.
 void print_track(gpointer track, gpointer user_data) ;
 
 GError *err ;
-//const char mnt_point[] = "/Users/paul/iPodTouch" ;
 const char *mnt_point ;
 
 int main(int argc, char *argv[]) {
@@ -35,7 +34,7 @@ int main(int argc, char *argv[]) {
   Itdb_iTunesDB *db = itdb_parse(mnt_point , &err) ;
   
   if (!db) {
-    fprintf(stderr, "No iPod found at %s\n", mnt_point) ;
+    fprintf(stderr, "iPod found at %s, but no iTunes database found.\n", mnt_point) ;
     fprintf(stderr, "%s\n", err -> message) ;
     exit(-1);
   }
