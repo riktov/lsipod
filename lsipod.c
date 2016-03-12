@@ -45,9 +45,9 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
   
-  print_db_info(db) ;
+  //print_db_info(db) ;
 
-  //g_list_foreach(db->tracks, print_track, NULL) ;
+  g_list_foreach(db->tracks, print_track, NULL) ;
   
   itdb_free(db) ;
 
