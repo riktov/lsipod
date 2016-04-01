@@ -94,11 +94,10 @@ int main(int argc, char *argv[]) {
 
   int num_ipods ;
   int i = 0;
-  
-  //print_mounted_ipods() ;
-  //exit(0) ;
 
-  num_ipods = get_mounted_ipods(mounts, sizeof(mounts)) ;
+  //exit(0) ; //testing
+
+  num_ipods = get_mounted_ipods(mounts, sizeof(mounts) / sizeof(*mounts)) ;
 
   switch(num_ipods) {
   case 0 :
@@ -208,6 +207,10 @@ int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) {
       itdb_free(db) ; 
     }
   }
+
+#ifdef __linux
+  endmntent(mtab) ;
+#endif
 
   return num_ipod_mounts ;
 }
