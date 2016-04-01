@@ -22,26 +22,74 @@ May be useful for copying from iPod to PC without using iTunes.
 
 #include "lsipod.h"
 
+struct match_table {
+  char *artist ;
+  char *title ;
+  char *album ;
+} ;
+  
 void test() ;
 void print_track(gpointer track, gpointer user_data) ;
 void print_db_info(Itdb_iTunesDB *db) ;
 void print_mounted_ipods() ;
 int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) ;
-void list_ipod_contents(const char *mnt_point) ;
-
-
+void list_ipod_contents(const char *mnt_point, const struct match_table *matches) ;
 int is_rchr(const char *str, char c) ;
 
 GError *err ;
 
+
 int main(int argc, char *argv[]) {
   /*
     if(argc > 2) {
-    printf("%s Version %d.%d\n", lsipod_VERSION_MAJOR, lsipod_VERSION_MINOR) ;
+
 
   }
   */
 
+  char *pa ;
+
+  //struct match_table matches ;
+  
+    struct match_table matches =
+    {
+      NULL,
+      NULL,
+      NULL
+    } ;
+
+  
+  int iarg ;
+  for(iarg = 1 ; iarg < argc ; iarg++) {
+    pa = argv[iarg] ;
+    if('-' == pa[0]) {
+      switch(pa[1]) {
+      case 'a':
+	matches.artist = argv[++iarg] ;
+	printf("Option: match artist: %s\n", argv[iarg]) ;
+	break ;
+      case 'd':
+	matches.album = argv[++iarg] ;
+	printf("Option: match album: %s\n", argv[iarg]) ;
+	break ;
+      case 't':
+	matches.title = argv[++iarg] ;
+	printf("Option: match title: %s\n", argv[iarg]) ;
+	break ;
+      case 'v' :
+	printf("lsipod Version %d.%d\n", lsipod_VERSION_MAJOR, lsipod_VERSION_MINOR) ;
+	break ;
+      default :
+	fprintf(stderr, "Unknown option switch:%c\n", pa[1]) ;
+      }
+    }
+      
+    //printf("%s\n", pa) ;
+  }
+
+  //exit(0) ;
+  
+  
   char *mounts[MAX_NUM_MOUNTED_IPODS] ;
 
   int num_ipods ;
@@ -57,8 +105,8 @@ int main(int argc, char *argv[]) {
     printf("No mounted ipods found.\n") ;
     break ;
   case 1 :
-    printf("Your ipod is here: %s.\n", mounts[i]) ;
-    list_ipod_contents(mounts[i]) ;
+    //printf("Your ipod is here: %s.\n", mounts[i]) ;
+    list_ipod_contents(mounts[i], &matches) ;
     break ;
   default :
     for(i = 0 ; i < num_ipods ; i++) {
@@ -80,7 +128,7 @@ int main(int argc, char *argv[]) {
   return 0 ;
 }
 
-void list_ipod_contents(const char *mnt_point) {
+void list_ipod_contents(const char *mnt_point, const struct match_table *matches) {
   //test() ;
 
   Itdb_iTunesDB *db = itdb_parse(mnt_point , &err) ;
@@ -91,9 +139,15 @@ void list_ipod_contents(const char *mnt_point) {
     exit(-1);
   }
   
-  /////print_db_info(db) ;
+  //print_db_info(db) ;
 
-  g_list_foreach(db->tracks, print_track, NULL) ;
+  if((matches->artist == NULL) &&
+     (matches->title == NULL) &&
+     (matches->album == NULL)) {
+    matches = NULL ;
+  }
+
+  g_list_foreach(db->tracks, print_track, (gpointer)matches) ;
   
   itdb_free(db) ;
 }
@@ -126,24 +180,14 @@ void print_mounted_ipods() {
 int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) {
   int num_ipod_mounts = 0 ;
   Itdb_iTunesDB *db ;
+  char *mnt_dir ;
 
 #ifdef __linux
   const struct mntent *pm ;
   FILE *mtab = setmntent("/etc/mtab", "r") ;
 
-  
   while(pm = getmntent(mtab)) {
-    err = NULL ;
-    db = itdb_parse(pm->mnt_dir, &err) ;
-    
-   if (db) {
-     if(num_ipod_mounts < arr_size) {
-       *mounted_ipods++ = pm->mnt_dir ;
-       num_ipod_mounts++ ;
-     }
-     itdb_free(db) ; 
-   }
-  }
+    mnt_dir = pm->mnt_dir ;
 #else
   struct statfs *pm ;
   int num_mounts, i ;
@@ -151,19 +195,20 @@ int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) {
   num_mounts = getmntinfo(&pm, 0) ;
   
   for(i = 0 ; i < num_mounts ; i++) {
+    mnt_dir = pm[i].f_mntonname ;
+#endif
     err = NULL ;
-    db = itdb_parse(pm[i].f_mntonname, &err) ;
-
-    if(db) {
-      if(num_mounts < arr_size) {
-	*mounted_ipods++ = pm[i].f_mntonname ;
+    db = itdb_parse(mnt_dir, &err) ;
+    
+    if (db) {
+      if(num_ipod_mounts < arr_size) {
+	*mounted_ipods++ = mnt_dir ;
 	num_ipod_mounts++ ;
       }
-      itdb_free(db) ;
+      itdb_free(db) ; 
     }
   }
-  
-#endif
+
   return num_ipod_mounts ;
 }
 
@@ -178,35 +223,44 @@ void print_db_info(Itdb_iTunesDB *db) {
   printf("%d tracks\n", numtracks) ;
 }
 
-/* Print info on each track. The prototype for this function is defined by g_list_foreach(), 
- which receives it as an argument for iteration.
+/* 
+Print info on each track. The prototype for this function is defined by g_list_foreach(), 
+which receives it as an argument for iteration.
 */
 void print_track(gpointer data, gpointer user_data) {
   Itdb_Track *track = (Itdb_Track *)data ;
 
-  /* get the path */
-  char *path = strdup(track->ipod_path) ;
-  itdb_filename_ipod2fs(path) ;
-
-  /* get the date added */
-  struct tm *timeinfo ;
-  timeinfo = localtime(&track->time_added) ;
-  char datestr[32] ;
-  strftime(datestr, sizeof(datestr), "%F", timeinfo);
-
-  /* get the mounted directory from the database*/
-  const char *mountpoint = itdb_get_mountpoint(track->itdb) ;
-
-  char *p = path ;
-
-  if(is_rchr(mountpoint, '/')) {
-    p++ ;
+  struct match_table *matches = (struct match_table *)user_data ;
+  //  gchar *artist = track->artist ;
+  
+  if((!matches) ||
+     (track->artist && matches->artist && g_strrstr(track->artist, matches->artist)) ||
+     (track->title  && matches->title  && g_strrstr(track->title, matches->title)) ||
+     (track->album  && matches->album  && g_strrstr(track->album, matches->album))
+     ) {
+    /* get the path */
+    char *path = strdup(track->ipod_path) ;
+    itdb_filename_ipod2fs(path) ;
+    
+    /* get the date added */
+    struct tm *timeinfo ;
+    timeinfo = localtime(&track->time_added) ;
+    char datestr[32] ;
+    strftime(datestr, sizeof(datestr), "%F", timeinfo);
+    
+    /* get the mounted directory from the database*/
+    const char *mountpoint = itdb_get_mountpoint(track->itdb) ;
+    
+    char *p = path ;
+    
+    if(is_rchr(mountpoint, '/')) {
+      p++ ;
+    }
+    
+    printf("%s %s%s #%s - %s - %s\n", datestr, mountpoint, p, track->title, track->artist, track->album) ;
+    
+    free(path) ;
   }
-
-  printf("%s %s%s #%s - %s\n", datestr, mountpoint, p, track->title, track->artist) ;
-
-  //  free(mnt_path) ;
-  free(path) ;
 }
 
 void test() {
