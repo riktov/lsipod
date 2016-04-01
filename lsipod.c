@@ -62,9 +62,9 @@ int main(int argc, char *argv[]) {
     break ;
   default :
     for(i = 0 ; i < num_ipods ; i++) {
-      printf("Found a mounted ipod at %s.\n", mounts[i]) ;
-      printf("Please specify which one you want to list.\n") ;
+      printf("Found a mounted ipod at: %s.\n", mounts[i]) ;
     }
+    printf("Please specify which one you want to list.\n") ;
   }
   
 
