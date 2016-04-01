@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 project (lsipod)
 add_executable(lsipod lsipod.c)
+set_property(TARGET lsipod APPEND_STRING PROPERTY COMPILE_FLAGS -Wall )
 
 find_package(PkgConfig REQUIRED)
 
