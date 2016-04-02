@@ -159,7 +159,7 @@ void print_mounted_ipods() {
 
   FILE *mtab = setmntent("/etc/mtab", "r") ;
 
-  while(pm = getmntent(mtab)) {
+  while((pm = getmntent(mtab))) {
     printf("%s\n", pm->mnt_dir) ;
   }
   
@@ -185,7 +185,7 @@ int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) {
   const struct mntent *pm ;
   FILE *mtab = setmntent("/etc/mtab", "r") ;
 
-  while(pm = getmntent(mtab)) {
+  while((pm = getmntent(mtab))) {
     mnt_dir = pm->mnt_dir ;
 #else
   struct statfs *pm ;
