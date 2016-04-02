@@ -8,6 +8,7 @@ May be useful for copying from iPod to PC without using iTunes.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef __linux
 #include <mntent.h>
@@ -20,6 +21,8 @@ May be useful for copying from iPod to PC without using iTunes.
 #include <gpod/itdb.h>
 //#include <glib-2.0/glib.h>
 
+#include <libimobiledevice/libimobiledevice.h>
+
 #include "lsipod.h"
 
 struct match_table {
@@ -28,27 +31,32 @@ struct match_table {
   char *album ;
 } ;
   
-void test() ;
 void print_track(gpointer track, gpointer user_data) ;
 void print_db_info(Itdb_iTunesDB *db) ;
 void print_mounted_ipods() ;
 int get_mounted_ipods(char *mounted_ipods[], size_t arr_size) ;
 void list_ipod_contents(const char *mnt_point, const struct match_table *matches) ;
 int is_rchr(const char *str, char c) ;
+void test_imobiledevice() ;
 
 GError *err ;
+
 
 
 int main(int argc, char *argv[]) {
   /*
     if(argc > 2) {
-
-
-  }
+    
+    
+    }
   */
-
+  
   char *pa ;
-
+  
+  
+  test_imobiledevice() ;
+  exit(0) ;
+  
   //struct match_table matches ;
   
     struct match_table matches =
@@ -265,14 +273,65 @@ void print_track(gpointer data, gpointer user_data) {
     free(path) ;
   }
 }
+ 
+ int is_rchr(const char *str, char c) {
+   const char *r = strrchr(str, c) ;
+   
+   return(r == str + strlen(str) - 1) ;
+ }
 
-void test() {
-  printf("%d\n", is_rchr("Foo/", 'c')) ;
-  exit(0) ;
-}
+ void notify(const idevice_event_t *ev, void *user_data) {
+   enum idevice_event_type e = ev->event ;
+   const char * u = ev->udid ;
 
-int is_rchr(const char *str, char c) {
-  const char *r = strrchr(str, c) ;
+   switch(e) {
+   case IDEVICE_DEVICE_ADD :
+     printf("Device added\n") ;
+     break;
+   case IDEVICE_DEVICE_REMOVE :
+     printf("Device removed\n") ;
+     break;
+   default :
+     printf("Unknown idevice_event_type\n") ;
+   }
+   
+   printf("Device udid: %s with: %s\n", u, (char *)user_data) ;
+ }
+ 
+ void test_imobiledevice() {
+   char **device_udids ;
+   int count ;
 
-  return(r == str + strlen(str) - 1) ;
-}
+   char user_data[] = "Some user data" ;
+   
+   idevice_event_subscribe(&notify, (void *)user_data) ;
+   
+   idevice_error_t err = idevice_get_device_list(&device_udids, &count) ;
+
+   sleep(3) ;
+   
+   if(err == IDEVICE_E_SUCCESS) {
+     printf("Found %d ilibmobile devices.\n", count) ;
+     for(int i = 0 ; i < count ; i++) {
+       uint32_t handle ;
+       idevice_t device ;
+       
+       idevice_new(&device, device_udids[i]) ;
+       printf("Just called idevice_new()\n") ;
+       
+       idevice_get_handle(device, &handle) ;
+       printf("Just called idevice_get_handle()\n") ;
+
+       //printf("%s with handle %d.\n", device_udids[i], handle) ;
+       idevice_free(device) ;
+       printf("Just called idevice_free()\n") ;
+
+     }
+   } else {
+     printf("ilibmobiledevice error\n") ;
+   }
+   
+   
+   idevice_device_list_free(device_udids) ;
+   idevice_event_unsubscribe() ;
+ }

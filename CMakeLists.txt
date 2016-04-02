@@ -7,11 +7,14 @@ find_package(PkgConfig REQUIRED)
 
 pkg_search_module(glib-2.0 REQUIRED glib-2.0)
 pkg_search_module(libgpod-1.0 REQUIRED libgpod-1.0)
+pkg_search_module(libimobiledevice-1.0 REQUIRED libimobiledevice-1.0)
 
 #find_package(glib-2.0 REQUIRED glib-2.0)
 include_directories(${libgpod-1.0_INCLUDE_DIRS})
+include_directories(${libimobiledevice-1.0_INCLUDE_DIRS})
+
 #set(LIBS ${LIBS} ${glib_LIBRARIES})
 
-target_link_libraries(lsipod gpod glib-2.0)
+target_link_libraries(lsipod gpod glib-2.0 imobiledevice)
 
 install(TARGETS lsipod DESTINATION bin)
