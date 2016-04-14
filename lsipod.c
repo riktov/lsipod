@@ -40,9 +40,9 @@ void print_track(gpointer track, gpointer user_data) ;
 void print_db_info(Itdb_iTunesDB *db) ;
 //void print_mounted_ipods() ;
 int get_mounted_ipods(char mounted_ipods[][32], size_t arr_size) ;
-void list_ipod_contents(const char *mnt_point, struct match_table *matches) ;
+void list_ipod_contents(const char *mnt_point, struct match_table *matches, char sort_key) ;
 int is_rchr(const char *str, char c) ;
-gint comp_tracks(gconstpointer a, gconstpointer b) ;
+gint comp_tracks(gconstpointer a, gconstpointer b, gpointer user_data) ;
 void add_filtered_track(gpointer data, gpointer user_data) ;
 GList *filter_tracks(GList *tracks, struct match_table *matches);
 gboolean track_passes_filter(Itdb_Track *track, struct match_table *matches) ;
@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
   //uint matches = 0 ;
   
   const char *selected_mount = NULL ;
+  char sort_key = '\0'; 
   
   int iarg ;
   for(iarg = 1 ; iarg < argc ; iarg++) {
@@ -92,8 +93,13 @@ int main(int argc, char *argv[]) {
       case 'm':
 	selected_mount = argv[++iarg] ;
 	break ;
+      case 's' :
+	sort_key = argv[++iarg][0] ;
+	printf("The sort key is %c\n", sort_key) ;
+	break ;
       default :
 	fprintf(stderr, "Unknown option switch:%c\n", pa[1]) ;
+	exit(0) ;
       }
     }
       
@@ -127,7 +133,7 @@ int main(int argc, char *argv[]) {
     break ;
   case 1 :
     //printf("Your ipod is here: %s.\n", mounts[i]) ;
-    list_ipod_contents(mounts[i], &matches) ;
+    list_ipod_contents(mounts[i], &matches, sort_key) ;
     break ;
   default :
     printf("We found %d mounts.\n", num_ipods) ;
@@ -150,16 +156,37 @@ int main(int argc, char *argv[]) {
   return 0 ;
 }
 
-
-gint comp_tracks(gconstpointer a, gconstpointer b) {
+gint comp_tracks(gconstpointer a, gconstpointer b, gpointer user_data) {
   Itdb_Track *track_a = (Itdb_Track *)a ;
   Itdb_Track *track_b = (Itdb_Track *)b ;
 
-  return g_strcmp0(track_a->album, track_b->album) ;
+  char *psort_key = (char *)user_data ;
+  char sort_key = *psort_key ;
+
+  char *a_str, *b_str ;
+  
+  switch(sort_key) {
+  case 'a':
+    a_str = track_a->artist ;
+    b_str = track_b->artist ;
+    break ;
+  case 'd':
+    a_str = track_a->album ;
+    b_str = track_b->album ;
+    break ;
+  case 't':
+    a_str = track_a->title ;
+    b_str = track_b->title ;
+    break ;
+  default:
+    break ;
+  }
+  
+  return g_strcmp0(a_str, b_str) ;
   //return track_a->time_added - track_b->time_added ;
 }
 
-void list_ipod_contents(const char *mnt_point, struct match_table *matches) {
+void list_ipod_contents(const char *mnt_point, struct match_table *matches, char sort_key) {
   Itdb_iTunesDB *db = itdb_parse(mnt_point , &err) ;
   
   if (!db) {
@@ -191,7 +218,8 @@ void list_ipod_contents(const char *mnt_point, struct match_table *matches) {
   if(matches) {
     tracks = filter_tracks(tracks, matches) ; //may allocate new, or return tracks
   }
-  GList *sorted_tracks = g_list_sort(tracks, comp_tracks) ;
+
+  GList *sorted_tracks = g_list_sort_with_data(tracks, comp_tracks, (gpointer)&sort_key) ;
 
   g_list_foreach(sorted_tracks, print_track, NULL) ;
 
