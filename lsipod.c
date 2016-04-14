@@ -45,6 +45,7 @@ int is_rchr(const char *str, char c) ;
 gint comp_tracks(gconstpointer a, gconstpointer b) ;
 void add_filtered_track(gpointer data, gpointer user_data) ;
 GList *filter_tracks(GList *tracks, struct match_table *matches);
+gboolean track_passes_filter(Itdb_Track *track, struct match_table *matches) ;
 
 GError *err ;
 
@@ -159,8 +160,6 @@ gint comp_tracks(gconstpointer a, gconstpointer b) {
 }
 
 void list_ipod_contents(const char *mnt_point, struct match_table *matches) {
-  //test() ;
-
   Itdb_iTunesDB *db = itdb_parse(mnt_point , &err) ;
   
   if (!db) {
@@ -187,13 +186,19 @@ void list_ipod_contents(const char *mnt_point, struct match_table *matches) {
   //  g_list_foreach(db->tracks, print_track, (gpointer)matches) ;
   //g_list_foreach(sorted, print_track, (gpointer)&matches) ;
 
-  GList *filtered_tracks = filter_tracks(db->tracks, matches) ;
-  GList *sorted_tracks = g_list_sort(filtered_tracks, comp_tracks) ;
+  GList *tracks = db->tracks ;
+  
+  if(matches) {
+    tracks = filter_tracks(tracks, matches) ; //may allocate new, or return tracks
+  }
+  GList *sorted_tracks = g_list_sort(tracks, comp_tracks) ;
 
   g_list_foreach(sorted_tracks, print_track, NULL) ;
 
-  
-  g_list_free(sorted_tracks) ;
+  if(tracks != db->tracks) {
+    g_list_free(sorted_tracks) ;
+  }
+
     //  g_list_free(filtered_tracks) ;
   
   itdb_free(db) ;
@@ -203,14 +208,13 @@ void list_ipod_contents(const char *mnt_point, struct match_table *matches) {
 GList *filter_tracks(GList *tracks, struct match_table *matches) {
   if (!matches) { return tracks ; }
 
-  //GList *filtered_tracks = NULL ;
+  GList *filtered_tracks = NULL ;
 
   /* hack together an array containing the two values we need to pass
      to g_list_foreach(). The sorted list will successively built on to list_and_filter[0]
    */
   void *list_and_filter[] = {
-    NULL,
-    //(void *)filtered_tracks,
+    (void *)filtered_tracks,
     (void *)matches,
   } ;
   
@@ -223,7 +227,7 @@ GList *filter_tracks(GList *tracks, struct match_table *matches) {
 void add_filtered_track(gpointer data, gpointer user_data) {
   Itdb_Track *track = (Itdb_Track *)data ;
 
-  /* crack open the filtered tracks adn matches*/
+  /* crack open the filtered tracks and matches*/
   void **list_and_filter = (void **)user_data ;
   
   GList *filtered_tracks = (GList *)list_and_filter[0] ;
@@ -335,48 +339,28 @@ which receives it as an argument for iteration.
 void print_track(gpointer data, gpointer user_data) {
   Itdb_Track *track = (Itdb_Track *)data ;
 
-  struct match_table *matches = (struct match_table *)user_data ;
-  //  gchar *artist = track->artist ;
-  //uint matches = (int)(*user_data) ;
-
+  /* get the path */
+  char *path = strdup(track->ipod_path) ;
+  itdb_filename_ipod2fs(path) ;
   
-  if((!matches) ||
-     (track->artist && matches->artist && g_strrstr(track->artist, matches->artist)) ||
-     (track->title  && matches->title  && g_strrstr(track->title, matches->title)) ||
-     (track->album  && matches->album  && g_strrstr(track->album, matches->album))
-     ) {
-
-    /*
-  if((matches == 0) ||
-     (track->artist && (matches & MATCH_ARTIST) && g_strrstr(track->artist, matches->artist)) ||
-     (track->title  && (matches & MATCH_TITLE)  && g_strrstr(track->title, matches->title)) ||
-     (track->album  && (matches & MATCH_ALBUM)  && g_strrstr(track->album, matches->album))
-     ) {
-    */
-    
-    /* get the path */
-    char *path = strdup(track->ipod_path) ;
-    itdb_filename_ipod2fs(path) ;
-    
-    /* get the date added */
-    struct tm *timeinfo ;
-    timeinfo = localtime(&track->time_added) ;
-    char datestr[32] ;
-    strftime(datestr, sizeof(datestr), "%F", timeinfo);
-    
-    /* get the mounted directory from the database*/
-    const char *mountpoint = itdb_get_mountpoint(track->itdb) ;
-    
-    char *p = path ;
-    
-    if(is_rchr(mountpoint, '/')) {
-      p++ ;
-    }
-    
-    printf("%s %s%s #%s - %s - %s\n", datestr, mountpoint, p, track->title, track->artist, track->album) ;
-    
-    free(path) ;
+  /* get the date added */
+  struct tm *timeinfo ;
+  timeinfo = localtime(&track->time_added) ;
+  char datestr[32] ;
+  strftime(datestr, sizeof(datestr), "%F", timeinfo);
+  
+  /* get the mounted directory from the database*/
+  const char *mountpoint = itdb_get_mountpoint(track->itdb) ;
+  
+  char *p = path ;
+  
+  if(is_rchr(mountpoint, '/')) {
+    p++ ;
   }
+  
+  printf("%s %s%s #%s - %s - %s\n", datestr, mountpoint, p, track->title, track->artist, track->album) ;
+    
+  free(path) ;
 }
  
  int is_rchr(const char *str, char c) {
