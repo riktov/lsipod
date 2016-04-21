@@ -39,7 +39,7 @@ struct tracklist_and_match {
 void print_track(gpointer track, gpointer user_data) ;
 void print_db_info(Itdb_iTunesDB *db) ;
 //void print_mounted_ipods() ;
-int get_mounted_ipods(char mounted_ipods[][32], size_t arr_size) ;
+int get_mounted_ipods(char mounted_ipods[][PATH_MAX], size_t arr_size) ;
 void list_ipod_contents(const char *mnt_point, struct match_table *matches, char sort_key) ;
 int is_rchr(const char *str, char c) ;
 gint comp_tracks(gconstpointer a, gconstpointer b, gpointer user_data) ;
@@ -75,17 +75,17 @@ int main(int argc, char *argv[]) {
       case 'a':
 	//matches |= MATCH_ARTIST ;
 	matches.artist = argv[++iarg] ;
-	printf("Option: match artist: %s\n", argv[iarg]) ;
+	//printf("Option: match artist: %s\n", argv[iarg]) ;
 	break ;
       case 'd':
 	//matches |= MATCH_ALBUM ;
 	matches.album = argv[++iarg] ;
-	printf("Option: match album: %s\n", argv[iarg]) ;
+	//printf("Option: match album: %s\n", argv[iarg]) ;
 	break ;
       case 't':
 	//matches |= MATCH_TITLE ;
 	matches.title = argv[++iarg] ;
-	printf("Option: match title: %s\n", argv[iarg]) ;
+	//printf("Option: match title: %s\n", argv[iarg]) ;
 	break ;
       case 'v' :
 	printf("lsipod Version %d.%d\n", lsipod_VERSION_MAJOR, lsipod_VERSION_MINOR) ;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   //exit(0) ;
   
   
-  char mounts[MAX_NUM_MOUNTED_IPODS][32] ;
+  char mounts[MAX_NUM_MOUNTED_IPODS][PATH_MAX] ;
 
   int num_ipods ;
   int i = 0;
@@ -204,7 +204,7 @@ void list_ipod_contents(const char *mnt_point, struct match_table *matches, char
     printf("No filters.\n") ;
   }
 
-  printf("iPod contains %d tracks.\n", g_list_length(db->tracks)) ;
+  //printf("iPod contains %d tracks.\n", g_list_length(db->tracks)) ;
   //return ;
   
 
@@ -248,7 +248,7 @@ GList *filter_tracks(GList *tracks, struct match_table *matches) {
   
   g_list_foreach(tracks, add_filtered_track, list_and_filter) ;
 
-  printf("Filtered list is now length %d\n", g_list_length(list_and_filter[0])) ;
+  //printf("Filtered list is now length %d\n", g_list_length(list_and_filter[0])) ;
   return list_and_filter[0] ;
 }
 
@@ -304,7 +304,7 @@ void print_mounted_ipods() {
 }
 */
 
-int get_mounted_ipods(char mounted_ipods[][32], size_t arr_size) {
+int get_mounted_ipods(char mounted_ipods[][PATH_MAX], size_t arr_size) {
   int num_ipod_mounts = 0 ;
   Itdb_iTunesDB *db ;
   char *mnt_dir ;
@@ -332,7 +332,7 @@ int get_mounted_ipods(char mounted_ipods[][32], size_t arr_size) {
     
     if ((db = itdb_parse(mnt_dir, &err))) {
       if(num_ipod_mounts < arr_size) {
-	printf("get_mounted_ipods() : %s\n", mnt_dir) ;
+	//printf("get_mounted_ipods() : %s\n", mnt_dir) ;
 	strncpy(*mounted_ipods, mnt_dir, sizeof(mounted_ipods[0])) ;
 	//*mounted_ipods = mnt_dir ;
 	num_ipod_mounts++ ;
