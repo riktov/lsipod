@@ -36,6 +36,7 @@ struct tracklist_and_match {
 } ;
 */
 
+void print_help() ;
 void print_track(gpointer track, gpointer user_data) ;
 void print_db_info(Itdb_iTunesDB *db) ;
 //void print_mounted_ipods() ;
@@ -73,23 +74,20 @@ int main(int argc, char *argv[]) {
     if('-' == pa[0]) {
       switch(pa[1]) {
       case 'a':
-	//matches |= MATCH_ARTIST ;
 	matches.artist = argv[++iarg] ;
 	//printf("Option: match artist: %s\n", argv[iarg]) ;
 	break ;
       case 'd':
-	//matches |= MATCH_ALBUM ;
 	matches.album = argv[++iarg] ;
 	//printf("Option: match album: %s\n", argv[iarg]) ;
 	break ;
       case 't':
-	//matches |= MATCH_TITLE ;
 	matches.title = argv[++iarg] ;
 	//printf("Option: match title: %s\n", argv[iarg]) ;
 	break ;
       case 'v' :
 	printf("lsipod Version %d.%d\n", lsipod_VERSION_MAJOR, lsipod_VERSION_MINOR) ;
-	break ;
+	exit(0) ;
       case 'm':
 	selected_mount = argv[++iarg] ;
 	break ;
@@ -97,6 +95,9 @@ int main(int argc, char *argv[]) {
 	sort_key = argv[++iarg][0] ;
 	printf("The sort key is %c\n", sort_key) ;
 	break ;
+      case 'h' :
+	print_help() ;
+	exit(0) ;
       default :
 	fprintf(stderr, "Unknown option switch:%c\n", pa[1]) ;
 	exit(0) ;
@@ -154,6 +155,17 @@ int main(int argc, char *argv[]) {
   */
   
   return 0 ;
+}
+
+void print_help() {
+  printf("lsipod\n") ;
+  printf("  [-a artist]\n") ;
+  printf("  [-d disc (album)]\n") ;
+  printf("  [-t title]\n") ;
+  printf("  [-m mount_number (if multiple mounted ipods are detected).]\n") ;
+  printf("  [-s [adt] sort by artist, disc, or title.]\n") ;
+  printf("  [-v version number]\n") ;
+  printf("  [-h this help]\n") ;
 }
 
 gint comp_tracks(gconstpointer a, gconstpointer b, gpointer user_data) {
