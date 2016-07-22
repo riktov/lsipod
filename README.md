@@ -1,4 +1,4 @@
 # lsipod
-A command-line utility to list music files on a filesystem-mounted iPod or other Apple portable device by title, artist, album, rather than a meaningless four-character filename.
+You want to copy music files from an iOS device to your PC, and you want to select files based on title, artist, and album, rather than a meaningless four-character filename. This utility lists the meaningless four-character filenames that match the track you want. That is all. You do the copying yourself.
 
-Requires libgpod, but does not use fusepod. May be useful for copying music files from the device to a computer.
+Requires libgpod, and does not use fusepod. 
