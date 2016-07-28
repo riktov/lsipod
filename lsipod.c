@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
 }
 
 void print_help() {
+  /* What is the standard GNUish format for help text??*/
   printf("lsipod\n") ;
   printf("  [-a artist]\n") ;
   printf("  [-d disc (album)]\n") ;
